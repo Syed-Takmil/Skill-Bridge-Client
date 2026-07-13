@@ -3,8 +3,11 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
+import { authClient } from '../lib/auth-client';
+import { useRouter } from 'next/navigation';
 
 export default function SignUpPage() {
+  const router=useRouter()
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -15,14 +18,28 @@ export default function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Registration backend integration goes here later
-    console.log('Creating account with:', formData);
 
-    setTimeout(() => {
+    try {
+      const { data, error } = await authClient.signUp.email({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        callbackURL: "/dashboard/user", // Fixed the broken string interpolation here
+      });
+
+      if (error) {
+        toast.error(`Error creating account: ${error.message}`);
+        setIsSubmitting(false);
+        return;
+      }
+      toast.success('Account created successfully!');
+router.push('/dashboard/user'); // Redirect to dashboard after successful signup
+    } 
+    catch (err) {
+      toast.error('An unexpected error occurred.');
+    } finally {
       setIsSubmitting(false);
-      toast('Account created successfully!');
-    }, 2000);
+    }
   };
 
   return (

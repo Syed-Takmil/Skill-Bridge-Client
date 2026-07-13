@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import React, { useState } from 'react';
+import { authClient } from '@/app/lib/auth-client';
+import React from 'react';
 
 // --- TS INTERFACES ---
 interface StatCardProps {
@@ -37,20 +37,15 @@ export default function DashboardPage() {
     { id: 2, user: { name: 'Mike Johnson', avatar: '👨‍💻' }, skill: 'Python Programming', status: 'Accepted', timeAgo: '1d ago' },
     { id: 3, user: { name: 'Emma Brown', avatar: '👩‍🏫' }, skill: 'English Speaking', status: 'Rejected', timeAgo: '2d ago' },
   ];
-
+const  {data:session}=authClient.useSession();
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 text-gray-900 dark:text-white flex transition-colors duration-300">
-      
-     
-
-      {/* ================= RIGHT WORKSPACE DASHBOARD ================= */}
       <main className="flex-1 p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full flex flex-col gap-8 overflow-y-auto">
         
         {/* Workspace Top Header Utility */}
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">Dashboard</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Welcome back, <span className="font-bold text-gray-800 dark:text-white">John! 👋</span></p>
+            <p className="text-lg text-gray-500 dark:text-gray-400 mt-0.5">Welcome back, <span className="font-bold text-gray-800 dark:text-white">{session?.user?.name}! 👋</span></p>
           </div>
 
           {/* Quick Profile Actions Dropdown Badge */}
@@ -158,6 +153,5 @@ export default function DashboardPage() {
         </div>
 
       </main>
-    </div>
   );
 }

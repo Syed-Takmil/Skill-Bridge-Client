@@ -2,8 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
+import { authClient } from '../lib/auth-client';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -14,14 +18,38 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Auth backend integration goes here later
-    console.log('Logging in with:', formData);
 
-    setTimeout(() => {
+    try {
+      // 1. Attempt Sign In
+      const { data, error } = await authClient.signIn.email({
+        email: formData.email,
+        password: formData.password,
+        rememberMe: true,
+      });  
+
+      if (error) {
+        toast.error(`Error Logging In: ${error.message}`);
+        setIsSubmitting(false); // Fix: Reset loading state on error
+        return;
+      }
+
+      // 2. Fetch current session programmatically (Not using a hook here)
+      const { data: sessionData } = await authClient.getSession();
+      const role = sessionData?.user?.role;
+
+      toast.success('Logged in successfully!');
+      
+      // 3. Redirect based on role
+      if (role === "user") {
+        router.push("/dashboard/user");
+      } else {
+        router.push("/dashboard/admin");
+      }
+    } catch (err) {
+      toast.error("An unexpected error occurred.");
+    } finally {
       setIsSubmitting(false);
-      alert('Logged in successfully!');
-    }, 1000);
+    }
   };
 
   return (

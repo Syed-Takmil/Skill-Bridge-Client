@@ -1,5 +1,6 @@
 'use client';
 
+import { authClient } from '@/app/lib/auth-client';
 import React from 'react';
 
 export default function AdminOverviewPage() {
@@ -9,12 +10,15 @@ export default function AdminOverviewPage() {
     { label: 'Pending Verifications', count: '28', change: '-4% down' },
     { label: 'Flagged Disputes', count: '3', change: 'Requires review' },
   ];
-
+const  {data:session}=authClient.useSession();
+const userName=session?.user?.name;
   return (
     <div className="p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">Admin Overview</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Global metrics tracking community growth and content flags.</p>
+        <h1 className="text-2xl font-extrabold tracking-tight">Admin DashBoard</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Global metrics tracking community growth and content flags.
+        </p>
+        <p>Welcome, {userName}!</p>
       </div>
 
       {/* Admin Stats Grid */}
