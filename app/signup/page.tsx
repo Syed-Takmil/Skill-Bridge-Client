@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -20,8 +21,8 @@ export default function SignUpPage() {
 
     setTimeout(() => {
       setIsSubmitting(false);
-      alert('Account created successfully!');
-    }, 1000);
+      toast('Account created successfully!');
+    }, 2000);
   };
 
   return (
