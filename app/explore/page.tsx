@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import React, { useState, useMemo } from 'react';
 
 // --- TYPES ---
@@ -188,8 +189,8 @@ export default function ExplorePage() {
           {paginatedSkills.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {paginatedSkills.map((skill) => (
-                <div 
-                  key={skill.id}
+               <Link key={skill.id} href={`/explore/skills/${skill.id}`}> <div 
+                  
                   className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-6"
                 >
                   {/* Top: Icon Placeholder Box */}
@@ -232,6 +233,7 @@ export default function ExplorePage() {
                     </div>
                   </div>
                 </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -279,7 +281,6 @@ export default function ExplorePage() {
                   );
                 })}
 
-                {/* Next Button */}
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
