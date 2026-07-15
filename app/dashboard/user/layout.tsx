@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/app/lib/auth-client';
 import { toast } from 'react-toastify';
+import { Power } from '@gravity-ui/icons';
 
 export default function UserDashboardLayout({
   children,
@@ -29,8 +30,7 @@ export default function UserDashboardLayout({
     { name: 'Manage Skills', icon: '📝', href: '/dashboard/user/manage-skills' },
     { name: 'My Requests', icon: '💼', href: '/dashboard/user/my-requests' },
     { name: 'Received Requests', icon: '📥', href: '/dashboard/user/received-requests' },
-    { name: 'Profile', icon: '👤', href: '/dashboard/user/profile' },
-    { name: 'Settings', icon: '⚙️', href: '/dashboard/user/settings' },
+    { name: 'Profile', icon: '👤', href: '/dashboard/user/profile' }
   ];
 
   return (
@@ -72,7 +72,9 @@ export default function UserDashboardLayout({
           title="Logout"
           className="w-full flex items-center justify-center md:justify-start gap-3 px-3 py-3 md:px-4 rounded-xl text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all mt-auto border-t border-gray-50 dark:border-gray-800 pt-4"
         >
-          <span className="text-lg shrink-0">🚪</span>
+          <span className="text-lg ">
+            <Power/>
+          </span>
           <span  onClick={handleSignOut} className="hidden cursor-pointer md:inline">Logout</span>
         </button>
       </aside>

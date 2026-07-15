@@ -29,6 +29,10 @@ export default function AddSkillPage() {
     imageUrl: '',
   });
 
+  // --- NEW: Curriculum State Management ---
+  const [curriculum, setCurriculum] = useState<string[]>([]);
+  const [currentChapter, setCurrentChapter] = useState('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
@@ -37,6 +41,20 @@ export default function AddSkillPage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // --- NEW: Add dynamic item to curriculum ---
+  const handleAddChapter = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (currentChapter.trim() !== '') {
+      setCurriculum((prev) => [...prev, currentChapter.trim()]);
+      setCurrentChapter('');
+    }
+  };
+
+  // --- NEW: Remove item from curriculum ---
+  const handleRemoveChapter = (indexToRemove: number) => {
+    setCurriculum((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,7 +80,8 @@ export default function AddSkillPage() {
         name: "Verified Instructor", 
         avatarUrl: formData.imageUrl || '',
         role: `${formData.experienceLevel} ${formData.category} Consultant`
-      }
+      },
+      curriculum: curriculum // 👈 NEW: Passed your custom-built curriculum list here!
     };
 
     try {
@@ -163,6 +182,56 @@ export default function AddSkillPage() {
             />
           </div>
 
+          {/* ================= NEW: INTERACTIVE CURRICULUM BUILDER ================= */}
+          <div className="flex flex-col gap-2 bg-slate-50/50 dark:bg-slate-950/40 p-4 rounded-xl border border-gray-150 dark:border-gray-800/80">
+            <label className="text-sm font-bold text-gray-800 dark:text-gray-200">
+              Curriculum / Core Topics
+            </label>
+            <p className="text-xs text-gray-550 dark:text-gray-400">
+              Add sequential modules, syllabus chapters, or milestones that you will teach.
+            </p>
+
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={currentChapter}
+                onChange={(e) => setCurrentChapter(e.target.value)}
+                placeholder="e.g. Module 1: Anatomy of a Search Query"
+                className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-805 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+              />
+              <button
+                type="button"
+                onClick={handleAddChapter}
+                className="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs font-bold px-4 py-2 rounded-xl transition-all border border-indigo-150 dark:border-indigo-900/50"
+              >
+                + Add Topic
+              </button>
+            </div>
+
+            {/* List of Added Chapters */}
+            {curriculum.length > 0 && (
+              <ul className="flex flex-col gap-2 mt-3 bg-white dark:bg-slate-950/80 p-3 rounded-lg border border-gray-200 dark:border-gray-800/60">
+                {curriculum.map((topic, idx) => (
+                  <li
+                    key={idx}
+                    className="flex justify-between items-center bg-slate-50 dark:bg-gray-900 px-3 py-2 rounded-md text-xs font-medium border border-gray-100 dark:border-gray-800"
+                  >
+                    <span className="text-gray-800 dark:text-gray-300">
+                      {idx + 1}. {topic}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveChapter(idx)}
+                      className="text-red-500 hover:text-red-700 font-extrabold hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           {/* Core Select Parameters Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             
@@ -215,8 +284,8 @@ export default function AddSkillPage() {
                 className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 dark:text-gray-300 transition-all"
               >
                 <option value="English">English</option>
-                <option value="Spanish">Spanish</option>
-                <option value="French">French</option>
+                <option value="Spanish">Hindi</option>
+                <option value="French">Bengali</option>
               </select>
             </div>
 
