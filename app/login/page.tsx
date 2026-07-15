@@ -29,13 +29,13 @@ export default function LoginPage() {
 
       if (error) {
         toast.error(`Error Logging In: ${error.message}`);
-        setIsSubmitting(false); // Fix: Reset loading state on error
+        setIsSubmitting(false); // Reset loading state on error
         return;
       }
 
-      // 2. Fetch current session programmatically (Not using a hook here)
+      // 2. Fetch current session programmatically (Asserting 'as any' to handle custom role field)
       const { data: sessionData } = await authClient.getSession();
-      const role = sessionData?.user?.role;
+      const role = (sessionData?.user as any)?.role;
 
       toast.success('Logged in successfully!');
       

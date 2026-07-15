@@ -41,8 +41,11 @@ export default function Navbar() {
   ];
 
   // 3. Conditional routes appended only when logged in
-  const authLinks = user ? [
-    { name: 'Dashboard', href: user.role === 'admin' ? '/dashboard/admin' : '/dashboard/user' },
+ const authLinks = user ? [
+    { 
+      name: 'Dashboard', 
+      href: (user as any).role === 'admin' ? '/dashboard/admin' : '/dashboard/user' 
+    },
     { name: 'Update Profile', href: '/dashboard/user/profile' }
   ] : [];
 
