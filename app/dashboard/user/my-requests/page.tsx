@@ -1,20 +1,20 @@
 'use client';
 
+import { authClient } from '@/app/lib/auth-client';
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 interface ExchangeRequest {
   _id: string;
-  skillId: string;
+  skillId?: string;
   customId?: number;
+  skillTitle?: string;
   instructorName: string;
-  requesterId: string; // Used for client-side matching
   status: 'Pending' | 'Approved' | 'Rejected';
   createdAt: string;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-// The ID used to filter out your specific requests from the global list
-const CURRENT_USER_ID = 'current_user_123'; 
 
 export default function MyRequestsPage() {
   const [requests, setRequests] = useState<ExchangeRequest[]>([]);
@@ -26,23 +26,24 @@ export default function MyRequestsPage() {
       try {
         setIsLoading(true);
         setError(null);
-        
-        // Hitting your exact endpoint: GET /requests
-        const response = await fetch(`${API_BASE_URL}/requests`);
+
+        const { data } = await authClient.getSession();
+        const user = data?.user;
+
+        // If the user isn't fully loaded yet, do not perform the fetch
+        if (!user || !user.email) {
+          throw new Error('Please log in to view your requested swaps.');
+        }
+
+        const response = await fetch(`${API_BASE_URL}/requests?requesterEmail=${encodeURIComponent(user.email)}`);
         if (!response.ok) {
-          throw new Error('Could not fetch exchange requests from the server.');
+          throw new Error('Could not fetch your outgoing requests.');
         }
         
-        const allRequests: ExchangeRequest[] = await response.json();
-        
-        // Filter the complete collection dynamically by the logged-in user's ID
-        const myFilteredRequests = allRequests.filter(
-          (req) => req.requesterId === CURRENT_USER_ID
-        );
-
-        setRequests(myFilteredRequests);
+        const dataJson = await response.json();
+        setRequests(dataJson);
       } catch (err: any) {
-        console.error('Error fetching requests:', err);
+        console.error('Sent requests fetch error:', err);
         setError(err.message || 'Something went wrong.');
       } finally {
         setIsLoading(false);
@@ -53,45 +54,45 @@ export default function MyRequestsPage() {
   }, []);
 
   return (
-    <div className="p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full flex flex-col gap-6 min-h-screen bg-slate-50 dark:bg-gray-950 text-gray-900 dark:text-white transition-colors duration-300">
+    <div className="p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full flex flex-col gap-6 min-h-screen">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight">My Requests</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+        <p className="text-sm text-gray-550 dark:text-gray-400 mt-0.5">
           Track the live status of exchange proposals you sent to other instructors.
         </p>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-20 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
+        <div className="flex justify-center items-center py-20 bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-2xl">
           <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : error ? (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-dashed border-red-200 dark:border-red-900/50 rounded-2xl p-8 text-center text-red-500">
+        <div className="bg-rose-50 dark:bg-rose-950/20 border border-dashed border-rose-200 dark:border-rose-900/50 rounded-2xl p-8 text-center text-rose-500">
           ⚠️ {error}
         </div>
       ) : requests.length > 0 ? (
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-gray-100 dark:border-gray-800 text-gray-400 font-semibold uppercase tracking-wider">
-                  <th className="p-4">Instructor</th>
-                  <th className="p-4">Requested Asset</th>
-                  <th className="p-4">Sent On</th>
-                  <th className="p-4 text-right">Status</th>
+                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-gray-150 dark:border-gray-800 text-gray-400 font-semibold uppercase tracking-wider text-xs">
+                  <th className="p-4 px-6">Instructor</th>
+                  <th className="p-4 px-6">Requested Asset</th>
+                  <th className="p-4 px-6">Sent On</th>
+                  <th className="p-4 px-6 text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-gray-150 dark:divide-gray-800">
                 {requests.map((req) => (
                   <tr key={req._id} className="hover:bg-slate-50/50 dark:hover:bg-gray-800/45 transition-colors">
-                    <td className="p-4 font-bold">{req.instructorName}</td>
-                    <td className="p-4 text-indigo-600 dark:text-indigo-400 font-medium">
-                      Skill reference ID: #{req.customId || req.skillId.slice(-6)}
+                    <td className="p-4 px-6 font-bold">{req.instructorName}</td>
+                    <td className="p-4 px-6 text-indigo-650 dark:text-indigo-400 font-medium">
+                      {req.skillTitle || `Skill reference ID: #${req.customId || (req.skillId ? req.skillId.slice(-6) : 'N/A')}`}
                     </td>
-                    <td className="p-4 text-gray-500">
+                    <td className="p-4 px-6 text-gray-500 text-xs">
                       {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'Recent'}
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 px-6 text-right">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
                         req.status === 'Approved' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400' :
                         req.status === 'Rejected' ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400' :
@@ -107,9 +108,9 @@ export default function MyRequestsPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-12 text-center text-sm text-gray-400 flex flex-col items-center gap-2">
+        <div className="bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-2xl p-12 text-center text-sm text-gray-400 flex flex-col items-center gap-2">
           <span className="text-2xl">📬</span>
-          <p className="font-medium text-gray-500">No outgoing requests sent yet.</p>
+          <p className="font-medium text-gray-550">No outgoing requests sent yet.</p>
         </div>
       )}
     </div>

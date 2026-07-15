@@ -4,17 +4,12 @@ import type { NextRequest } from 'next/server';
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Fetch Better-Auth session cookies directly from the server request
-  // Better-Auth typically sets 'better-auth.session_token' or similar. Check your application storage tab!
   const sessionToken = request.cookies.get('better-auth.session_token')?.value;
-  
-  // Better-Auth usually stores the user payload or role in a sister cookie, 
-  // or you can parse it if it's a JWT. For a lightweight check without async DB overhead:
-  const userRole = request.cookies.get('user-role')?.value; // Make sure your login sets this!
+  // If user-role cookie isn't set yet, we don't block them instantly unless they hit the wrong route
+  const userRole = request.cookies.get('user-role')?.value; 
 
   const isAuthenticated = !!sessionToken;
 
-  // 2. Define route targets
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
   const isAdminDashboard = pathname.startsWith('/dashboard/admin');
   const isUserDashboard = pathname.startsWith('/dashboard/user');
@@ -33,7 +28,8 @@ export async function proxy(request: NextRequest) {
   }
 
   // Case C: Regular logged-in users attempting to access Admin resources
-  if (isAuthenticated && userRole !== 'admin' && isAdminDashboard) {
+  // ONLY redirect if we are 100% sure they are not an admin (userRole is explicitly set and not admin)
+  if (isAuthenticated && userRole && userRole !== 'admin' && isAdminDashboard) {
     return NextResponse.redirect(new URL('/dashboard/user', request.url));
   }
 
@@ -45,7 +41,6 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-// 3. Keep your original configuration block intact
 export const config = {
   matcher: [
     '/login',

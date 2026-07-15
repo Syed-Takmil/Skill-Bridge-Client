@@ -15,6 +15,17 @@ export default function LoginPage() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  // --- NEW: Demo Login Auto-Fill Helper ---
+  const handleDemoLogin = () => {
+    setFormData({
+      email: 'demo@user.com',
+      password: '123456789',
+    });
+    toast.info('Demo credentials loaded! Click Sign In to log in.', {
+      autoClose: 2000,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -37,6 +48,8 @@ export default function LoginPage() {
       const { data: sessionData } = await authClient.getSession();
       const role = (sessionData?.user as any)?.role;
 
+      document.cookie = `user-role=${role}; path=/; max-age=86400; SameSite=Lax`;
+      
       toast.success('Logged in successfully!');
       
       // 3. Redirect based on role
@@ -113,6 +126,17 @@ export default function LoginPage() {
           >
             {isSubmitting ? 'Logging in...' : 'Sign In'}
           </button>
+
+          {/* ================= NEW: DEMO AUTO-FILL ACTION BUTTON ================= */}
+          <button
+            type="button"
+            onClick={handleDemoLogin}
+            disabled={isSubmitting}
+            className="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-950 border border-gray-150 dark:border-gray-800 text-gray-750 dark:text-gray-300 font-bold text-xs py-2 px-4 rounded-xl transition-all active:scale-[0.99] disabled:opacity-50"
+          >
+            🔑 Autofill Demo Credentials
+          </button>
+
         </form>
 
         {/* Footer Link */}

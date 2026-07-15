@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import SkillCard,{ SkillCardProps } from '@/app/Components/SkillCard';
+import { authClient } from '@/app/lib/auth-client';
+import { toast } from 'react-toastify';
 
 // --- TYPES ---
 interface SkillDetail {
@@ -155,29 +157,46 @@ export default function SkillDetailPage() {
   }, [activeTab, skillData, id]);
 
   // --- POST EXCHANGE REQUEST ---
-  const handleExchangeRequest = async () => {
-    if (!skillData) return;
-    try {
-      setIsRequesting(true);
-      const response = await fetch(`${API_BASE_URL}/requests`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          skillId: skillData._id,
-          customId: skillData.id,
-          instructorName: skillData.instructor.name,
-          requesterId: "current_user_123" 
-        }),
-      });
 
-      if (!response.ok) throw new Error('Failed to send exchange request.');
-      setRequestSent(true);
-    } catch (err: any) {
-      alert(err.message || 'Error processing your request.');
-    } finally {
-      setIsRequesting(false);
+const handleExchangeRequest = async (skill: any) => {
+  try {
+    // 1. Get the real logged-in user details
+    const { data } = await authClient.getSession();
+    const user = data?.user;
+
+    if (!user || !user.email) {
+      toast.error('You must be logged in to request a skill swap.');
+      return;
     }
-  };
+
+    // 2. Build the payload matching your MongoDB schema
+    const requestPayload = {
+      skillId: skill._id,
+      customId: skill.customId,
+      skillTitle: skill.title,
+      instructorName: skill.instructorName,
+      instructorEmail: skill.instructorEmail, // Must be saved on the skill document
+      requesterName: user.name,               // Real logged-in user name
+      requesterEmail: user.email,             // Real logged-in user email
+      status: 'Pending',
+    };
+
+    // 3. Post it to your Express backend
+    const response = await fetch(`${API_BASE_URL}/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestPayload),
+    });
+
+    if (!response.ok) {
+      throw new Error('Could not submit swap request.');
+    }
+
+    toast.success('Swap request sent successfully!');
+  } catch (err: any) {
+    toast.error(err.message || 'Something went wrong.');
+  }
+};
 
 
 

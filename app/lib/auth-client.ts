@@ -1,10 +1,8 @@
-
-
-
 import { createAuthClient } from "better-auth/react"
+
 export const authClient = createAuthClient({
-    /** The base URL of the server (optional if you're using the same domain) */
-    baseURL: process.env.BETTER_AUTH_URL as string
+    // Prefix with NEXT_PUBLIC_ so the browser can read it!
+    baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://skill-bridge-client-rho.vercel.app"
 })
 
-export const { signIn, signUp, useSession } = createAuthClient()
+export const { signIn, signUp, useSession } = authClient;

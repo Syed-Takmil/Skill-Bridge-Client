@@ -15,9 +15,6 @@ export default function AdminDashboardLayout({
   const adminNavItems = [
     { name: 'Admin Overview', icon: '📈', href: '/dashboard/admin' },
     { name: 'Manage Users', icon: '👥', href: '/dashboard/admin/users' },
-    { name: 'Verify Skills', icon: '🛡️', href: '/dashboard/admin/verify-skills' },
-    { name: 'Platform Dispute', icon: '⚖️', href: '/dashboard/admin/disputes' },
-    { name: 'System Settings', icon: '⚙️', href: '/dashboard/admin/settings' },
   ];
 
   return (

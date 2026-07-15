@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
+import { authClient } from '@/app/lib/auth-client';
 
 interface SkillFormState {
   title: string;
@@ -18,6 +20,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function AddSkillPage() {
   const router = useRouter();
+  const [userSession, setUserSession] = useState<any>(null);
+  
   const [formData, setFormData] = useState<SkillFormState>({
     title: '',
     category: '',
@@ -29,12 +33,25 @@ export default function AddSkillPage() {
     imageUrl: '',
   });
 
-  // --- NEW: Curriculum State Management ---
   const [curriculum, setCurriculum] = useState<string[]>([]);
   const [currentChapter, setCurrentChapter] = useState('');
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  // Fetch logged-in user on mount
+  useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data } = await authClient.getSession();
+        if (data?.user) {
+          setUserSession(data.user);
+        }
+      } catch (err) {
+        console.error('Failed to get user session:', err);
+      }
+    };
+    getSession();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -43,7 +60,6 @@ export default function AddSkillPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // --- NEW: Add dynamic item to curriculum ---
   const handleAddChapter = (e: React.MouseEvent) => {
     e.preventDefault();
     if (currentChapter.trim() !== '') {
@@ -52,19 +68,24 @@ export default function AddSkillPage() {
     }
   };
 
-  // --- NEW: Remove item from curriculum ---
   const handleRemoveChapter = (indexToRemove: number) => {
     setCurriculum((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!userSession?.email) {
+      setSubmissionError('You must be logged in to create a skill listing.');
+      toast.error('Session not found. Please log in.');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmissionError(null);
 
-    // Transforming values into strict alignment with your explicit MongoDB layout schema
     const databasePayload = {
-      id: Math.floor(Math.random() * 1000000), // Generates a unique numeric custom id matching schema requirement
+      id: Math.floor(Math.random() * 1000000), 
       title: formData.title,
       category: formData.category,
       description: formData.description,
@@ -77,19 +98,18 @@ export default function AddSkillPage() {
       status: 'Online',
       icon: formData.category === 'Marketing' ? '🚀' : '💻',
       instructor: {
-        name: "Verified Instructor", 
-        avatarUrl: formData.imageUrl || '',
+        name: userSession.name || "Verified Instructor", 
+        email: userSession.email, // 👈 Saved directly to secure personal ownership
+        avatarUrl: formData.imageUrl || userSession.image || '',
         role: `${formData.experienceLevel} ${formData.category} Consultant`
       },
-      curriculum: curriculum // 👈 NEW: Passed your custom-built curriculum list here!
+      curriculum: curriculum 
     };
 
     try {
       const response = await fetch(`${API_BASE_URL}/skills`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(databasePayload),
       });
 
@@ -97,8 +117,8 @@ export default function AddSkillPage() {
         throw new Error('Failed to register the skill listing onto the database.');
       }
 
-      alert('Skill registered successfully!');
-      router.push('/explore');
+      toast.success('Skill registered successfully!');
+      router.push('/dashboard/user/manage-skills');
     } catch (err: any) {
       console.error(err);
       setSubmissionError(err.message || 'An unexpected server error occurred.');
@@ -111,12 +131,11 @@ export default function AddSkillPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-2xl w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm p-8 sm:p-10">
         
-        {/* Form Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
             Add New Skill
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-sm text-gray-550 dark:text-gray-400 mt-2">
             Share your skill profile with the community network
           </p>
         </div>
@@ -127,9 +146,7 @@ export default function AddSkillPage() {
           </div>
         )}
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          
           {/* Skill Title */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -142,7 +159,7 @@ export default function AddSkillPage() {
               value={formData.title}
               onChange={handleChange}
               placeholder="e.g. SEO Mastery for Modern Web Developers"
-              className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white transition-all"
+              className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-950 dark:text-white transition-all"
             />
           </div>
 
@@ -178,13 +195,13 @@ export default function AddSkillPage() {
               value={formData.description}
               onChange={handleChange}
               placeholder="Describe your workflows, toolkits and learning objectives..."
-              className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white resize-none transition-all"
+              className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-905 dark:text-white resize-none transition-all"
             />
           </div>
 
-          {/* ================= NEW: INTERACTIVE CURRICULUM BUILDER ================= */}
+          {/* Interactive Curriculum */}
           <div className="flex flex-col gap-2 bg-slate-50/50 dark:bg-slate-950/40 p-4 rounded-xl border border-gray-150 dark:border-gray-800/80">
-            <label className="text-sm font-bold text-gray-800 dark:text-gray-200">
+            <label className="text-sm font-bold text-gray-800 dark:text-gray-205">
               Curriculum / Core Topics
             </label>
             <p className="text-xs text-gray-550 dark:text-gray-400">
@@ -197,7 +214,7 @@ export default function AddSkillPage() {
                 value={currentChapter}
                 onChange={(e) => setCurrentChapter(e.target.value)}
                 placeholder="e.g. Module 1: Anatomy of a Search Query"
-                className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-805 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-805 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-950 dark:text-white"
               />
               <button
                 type="button"
@@ -208,7 +225,6 @@ export default function AddSkillPage() {
               </button>
             </div>
 
-            {/* List of Added Chapters */}
             {curriculum.length > 0 && (
               <ul className="flex flex-col gap-2 mt-3 bg-white dark:bg-slate-950/80 p-3 rounded-lg border border-gray-200 dark:border-gray-800/60">
                 {curriculum.map((topic, idx) => (
@@ -232,20 +248,16 @@ export default function AddSkillPage() {
             )}
           </div>
 
-          {/* Core Select Parameters Row */}
+          {/* Parameters row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            
-            {/* Experience Level */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Level
-              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 font-medium">Level</label>
               <select
                 name="experienceLevel"
                 required
                 value={formData.experienceLevel}
                 onChange={handleChange}
-                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 dark:text-gray-300 transition-all"
+                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-3 text-sm focus:outline-none text-gray-700 dark:text-gray-300"
               >
                 <option value="Beginner">Beginner</option>
                 <option value="Intermediate">Intermediate</option>
@@ -253,17 +265,14 @@ export default function AddSkillPage() {
               </select>
             </div>
 
-            {/* Availability */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Availability
-              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 font-medium">Availability</label>
               <select
                 name="availability"
                 required
                 value={formData.availability}
                 onChange={handleChange}
-                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 dark:text-gray-300 transition-all"
+                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-3 text-sm focus:outline-none text-gray-700 dark:text-gray-300"
               >
                 <option value="Anytime">Anytime</option>
                 <option value="Weekdays">Weekdays</option>
@@ -271,27 +280,22 @@ export default function AddSkillPage() {
               </select>
             </div>
 
-            {/* Language */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Language
-              </label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 font-medium">Language</label>
               <select
                 name="language"
                 required
                 value={formData.language}
                 onChange={handleChange}
-                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 dark:text-gray-300 transition-all"
+                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-3 text-sm focus:outline-none text-gray-700 dark:text-gray-300"
               >
                 <option value="English">English</option>
                 <option value="Spanish">Hindi</option>
                 <option value="French">Bengali</option>
               </select>
             </div>
-
           </div>
 
-          {/* Optional Meta Row fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -303,7 +307,7 @@ export default function AddSkillPage() {
                 value={formData.location}
                 onChange={handleChange}
                 placeholder="e.g. Remote"
-                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white transition-all"
+                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none text-gray-950 dark:text-white"
               />
             </div>
 
@@ -317,12 +321,11 @@ export default function AddSkillPage() {
                 value={formData.imageUrl}
                 onChange={handleChange}
                 placeholder="https://images.com/avatar.jpg"
-                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white transition-all"
+                className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none text-gray-950 dark:text-white"
               />
             </div>
           </div>
 
-          {/* Submit Action Button */}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -330,9 +333,7 @@ export default function AddSkillPage() {
           >
             {isSubmitting ? 'Publishing listing...' : 'Submit Skill'}
           </button>
-
         </form>
-
       </div>
     </div>
   );
