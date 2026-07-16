@@ -4,7 +4,7 @@ export default function StatsBar() {
   const stats = [
     {
       id: 1,
-      value: '1200+',
+      value: '100+',
       label: 'Active Users',
       iconBg: 'bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400',
       icon: (
@@ -15,7 +15,7 @@ export default function StatsBar() {
     },
     {
       id: 2,
-      value: '450+',
+      value: '50+',
       label: 'Skills Shared',
       iconBg: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',
       icon: (
@@ -26,7 +26,7 @@ export default function StatsBar() {
     },
     {
       id: 3,
-      value: '980+',
+      value: '80+',
       label: 'Successful Exchanges',
       iconBg: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400',
       icon: (
