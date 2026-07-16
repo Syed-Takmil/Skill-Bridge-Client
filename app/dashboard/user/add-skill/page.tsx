@@ -75,12 +75,6 @@ export default function AddSkillPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!userSession?.email) {
-      setSubmissionError('You must be logged in to create a skill listing.');
-      toast.error('Session not found. Please log in.');
-      return;
-    }
-
     setIsSubmitting(true);
     setSubmissionError(null);
 
@@ -98,9 +92,9 @@ export default function AddSkillPage() {
       status: 'Online',
       icon: formData.category === 'Marketing' ? '🚀' : '💻',
       instructor: {
-        name: userSession.name || "Verified Instructor", 
-        email: userSession.email, // 👈 Saved directly to secure personal ownership
-        avatarUrl: formData.imageUrl || userSession.image || '',
+        name: userSession?.name || "Verified Instructor", 
+        email: userSession?.email || "", 
+        avatarUrl: formData.imageUrl || userSession?.image || '',
         role: `${formData.experienceLevel} ${formData.category} Consultant`
       },
       curriculum: curriculum 
@@ -135,7 +129,7 @@ export default function AddSkillPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
             Add New Skill
           </h1>
-          <p className="text-sm text-gray-550 dark:text-gray-400 mt-2">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             Share your skill profile with the community network
           </p>
         </div>
@@ -195,16 +189,16 @@ export default function AddSkillPage() {
               value={formData.description}
               onChange={handleChange}
               placeholder="Describe your workflows, toolkits and learning objectives..."
-              className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-905 dark:text-white resize-none transition-all"
+              className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white resize-none transition-all"
             />
           </div>
 
           {/* Interactive Curriculum */}
           <div className="flex flex-col gap-2 bg-slate-50/50 dark:bg-slate-950/40 p-4 rounded-xl border border-gray-150 dark:border-gray-800/80">
-            <label className="text-sm font-bold text-gray-800 dark:text-gray-205">
+            <label className="text-sm font-bold text-gray-800 dark:text-gray-200">
               Curriculum / Core Topics
             </label>
-            <p className="text-xs text-gray-550 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               Add sequential modules, syllabus chapters, or milestones that you will teach.
             </p>
 
@@ -214,7 +208,7 @@ export default function AddSkillPage() {
                 value={currentChapter}
                 onChange={(e) => setCurrentChapter(e.target.value)}
                 placeholder="e.g. Module 1: Anatomy of a Search Query"
-                className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-805 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-950 dark:text-white"
+                className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-950 dark:text-white"
               />
               <button
                 type="button"
@@ -290,8 +284,8 @@ export default function AddSkillPage() {
                 className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-3 text-sm focus:outline-none text-gray-700 dark:text-gray-300"
               >
                 <option value="English">English</option>
-                <option value="Spanish">Hindi</option>
-                <option value="French">Bengali</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Bengali">Bengali</option>
               </select>
             </div>
           </div>

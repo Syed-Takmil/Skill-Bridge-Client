@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import NavLink from "../NavLink";
 import { authClient } from '@/app/lib/auth-client';
-import Image from 'next/image';
 
 export default function Navbar() {
   const router = useRouter();
@@ -17,6 +16,7 @@ export default function Navbar() {
   // 1. Get real-time session status using your auth framework's client hook
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
+  const isAdmin = (user as any)?.role === 'admin';
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
@@ -40,24 +40,34 @@ export default function Navbar() {
     { name: 'Contact', href: '/contact' },
   ];
 
-  // 3. Conditional routes appended only when logged in
- const authLinks = user ? [
-    { 
-      name: 'Dashboard', 
-      href: (user as any).role === 'admin' ? '/dashboard/admin' : '/dashboard/user' 
-    },
-    { name: 'Update Profile', href: '/dashboard/user/profile' }
-  ] : [];
+  // 3. Conditional routes appended dynamically based on User Role
+  const authLinks = user 
+    ? isAdmin
+      ? [
+          { name: 'Dashboard', href: '/dashboard/admin' },
+          { name: 'Manage Users', href: '/dashboard/admin/users' }
+        ]
+      : [
+          { name: 'Dashboard', href: '/dashboard/user' },
+          { name: 'Update Profile', href: '/dashboard/user/profile' }
+        ]
+    : [];
 
   const navLinks = [...baseLinks, ...authLinks];
 
   const handleSignOut = async () => {
     try {
       await authClient.signOut();
+      
+      // Clear out the manual user-role tracking cookie completely
+      document.cookie = "user-role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
+      
       toast.success('Signed out successfully');
       setIsDropdownOpen(false);
       setIsOpen(false);
-      router.push('/login');
+      
+      // Force a complete layout check reload to the login route
+      window.location.href = '/login';
     } catch (error) {
       toast.error('Failed to log out');
     }

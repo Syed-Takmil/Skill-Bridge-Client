@@ -21,12 +21,17 @@ export default function ReceivedRequestsPage() {
   const [incomingRequests, setIncomingRequests] = useState<ExchangeRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // FIXED: Using the reactive useSession() hook instead of the asynchronous getSession() Promise
+  const { data: session, isPending: sessionLoading } = authClient.useSession();
+
   useEffect(() => {
+    // If auth client is still fetching the user configuration session, wait out the frame
+    if (sessionLoading) return;
+
     const fetchIncomingRequests = async () => {
       try {
         setIsLoading(true);
-        const { data } = await authClient.getSession();
-        const user = data?.user;
+        const user = session?.user;
 
         if (!user || !user.email) {
           throw new Error('Please log in to view received requests.');
@@ -38,7 +43,7 @@ export default function ReceivedRequestsPage() {
         }
         
         const incoming = await response.json();
-        setIncomingRequests(incoming);
+        setIncomingRequests(Array.isArray(incoming) ? incoming : []);
       } catch (err: any) {
         console.error('Fetch requests error:', err);
         toast.error(err.message || 'Error loading received proposals.');
@@ -48,7 +53,7 @@ export default function ReceivedRequestsPage() {
     };
 
     fetchIncomingRequests();
-  }, []);
+  }, [session, sessionLoading]);
 
   const handleStatusUpdate = async (requestId: string, newStatus: 'Approved' | 'Rejected') => {
     try {
@@ -74,20 +79,25 @@ export default function ReceivedRequestsPage() {
     }
   };
 
+  // Guard loading layout blocks to prevent layout flickers while the session checks out
+  if (sessionLoading || isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full flex flex-col gap-6 min-h-screen text-gray-900 dark:text-white">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight">Received Requests</h1>
-        <p className="text-sm text-gray-550 dark:text-gray-400 mt-0.5">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
           Approve or reject incoming swap requests from users who want to learn your skills.
         </p>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center py-20 bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-2xl shadow-sm">
-          <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : incomingRequests.length > 0 ? (
+      {incomingRequests.length > 0 ? (
         <div className="bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
@@ -133,7 +143,7 @@ export default function ReceivedRequestsPage() {
                           req.status === 'Approved' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400' :
                           'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400'
                         }`}>
-                          {req.status}
+                          {req.status === 'Approved' ? 'Approved' : req.status}
                         </span>
                       )}
                     </td>
@@ -146,7 +156,7 @@ export default function ReceivedRequestsPage() {
       ) : (
         <div className="bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-2xl p-12 text-center text-sm text-gray-400 flex flex-col items-center gap-2">
           <span className="text-2xl">📥</span>
-          <p className="font-medium text-gray-550">No incoming exchange requests yet.</p>
+          <p className="font-medium text-gray-500">No incoming exchange requests yet.</p>
         </div>
       )}
     </div>

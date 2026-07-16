@@ -26,44 +26,46 @@ export default function LoginPage() {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    try {
-      // 1. Attempt Sign In
-      const { data, error } = await authClient.signIn.email({
-        email: formData.email,
-        password: formData.password,
-        rememberMe: true,
-      });  
+  try {
+    // 1. Attempt Sign In
+    const { data, error } = await authClient.signIn.email({
+      email: formData.email,
+      password: formData.password,
+      rememberMe: true,
+    });  
 
-      if (error) {
-        toast.error(`Error Logging In: ${error.message}`);
-        setIsSubmitting(false); // Reset loading state on error
-        return;
-      }
+    if (error) {
+      toast.error(`Error Logging In: ${error.message}`);
+      setIsSubmitting(false);
+      return;
+    }
 
-      // 2. Fetch current session programmatically (Asserting 'as any' to handle custom role field)
-      const { data: sessionData } = await authClient.getSession();
-      const role = (sessionData?.user as any)?.role;
+    // 2. Fetch current session programmatically
+    const { data: sessionData } = await authClient.getSession();
+    const role = (sessionData?.user as any)?.role || "user"; // Fallback to "user" if missing
 
-      document.cookie = `user-role=${role}; path=/; max-age=86400; SameSite=Lax`;
-      
-      toast.success('Logged in successfully!');
-      
-      // 3. Redirect based on role
+    
+    toast.success('Logged in successfully!');
+    
+    // 3. Small timeout ensures the browser writes the cookie before redirecting
+    setTimeout(() => {
       if (role === "user") {
         router.push("/dashboard/user");
       } else {
         router.push("/dashboard/admin");
       }
-    } catch (err) {
-      toast.error("An unexpected error occurred.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    }, 100);
+
+  } catch (err) {
+    toast.error("An unexpected error occurred.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">

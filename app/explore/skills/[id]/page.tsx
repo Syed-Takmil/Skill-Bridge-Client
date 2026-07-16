@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import SkillCard,{ SkillCardProps } from '@/app/Components/SkillCard';
+import SkillCard, { SkillCardProps } from '@/app/Components/SkillCard';
 import { authClient } from '@/app/lib/auth-client';
 import { toast } from 'react-toastify';
 
@@ -16,6 +16,7 @@ interface SkillDetail {
   category: string;
   instructor: {
     name: string;
+    email?: string;    // Captured dynamically or expected from schema
     avatarUrl?: string; 
     avatar?: string;    
     role?: string;
@@ -157,48 +158,52 @@ export default function SkillDetailPage() {
   }, [activeTab, skillData, id]);
 
   // --- POST EXCHANGE REQUEST ---
+  const handleExchangeRequest = async () => {
+    if (!skillData) return;
 
-const handleExchangeRequest = async (skill: any) => {
-  try {
-    // 1. Get the real logged-in user details
-    const { data } = await authClient.getSession();
-    const user = data?.user;
+    try {
+      setIsRequesting(true);
 
-    if (!user || !user.email) {
-      toast.error('You must be logged in to request a skill swap.');
-      return;
+      // 1. Get the real logged-in user details from Better-Auth
+      const { data } = await authClient.getSession();
+      const user = data?.user;
+
+      if (!user || !user.email) {
+        toast.error('You must be logged in to request a skill swap.');
+        return;
+      }
+
+      // 2. Build the payload matching your MongoDB schema out of skillData state
+      const requestPayload = {
+        skillId: skillData._id,
+        customId: skillData.id,
+        skillTitle: skillData.title,
+        instructorName: skillData.instructor.name,
+        instructorEmail: skillData.instructor.email || '', 
+        requesterName: user.name || 'Anonymous User',              
+        requesterEmail: user.email,             
+        status: 'Pending',
+      };
+
+      // 3. Post it to your Express backend
+      const response = await fetch(`${API_BASE_URL}/requests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestPayload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Could not submit swap request.');
+      }
+
+      toast.success('Swap request sent successfully!');
+      setRequestSent(true);
+    } catch (err: any) {
+      toast.error(err.message || 'Something went wrong.');
+    } finally {
+      setIsRequesting(false);
     }
-
-    // 2. Build the payload matching your MongoDB schema
-    const requestPayload = {
-      skillId: skill._id,
-      customId: skill.customId,
-      skillTitle: skill.title,
-      instructorName: skill.instructorName,
-      instructorEmail: skill.instructorEmail, // Must be saved on the skill document
-      requesterName: user.name,               // Real logged-in user name
-      requesterEmail: user.email,             // Real logged-in user email
-      status: 'Pending',
-    };
-
-    // 3. Post it to your Express backend
-    const response = await fetch(`${API_BASE_URL}/requests`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestPayload),
-    });
-
-    if (!response.ok) {
-      throw new Error('Could not submit swap request.');
-    }
-
-    toast.success('Swap request sent successfully!');
-  } catch (err: any) {
-    toast.error(err.message || 'Something went wrong.');
-  }
-};
-
-
+  };
 
   if (isLoading) {
     return (
@@ -318,7 +323,6 @@ const handleExchangeRequest = async (skill: any) => {
                   'Send Exchange Request'
                 )}
               </button>
-
             </div>
           </div>
         </div>
@@ -425,7 +429,7 @@ const handleExchangeRequest = async (skill: any) => {
                 </div>
               )}
 
-              {/* TAB 3: RELATED ITEMS IN A 4-COLUMN GRID */}
+              {/* TAB 3: RELATED ITEMS */}
               {activeTab === 'related' && (
                 <div>
                   {isLoadingRelated ? (
